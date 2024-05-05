@@ -63,6 +63,7 @@ for filename in os.listdir(obj_directory):
             if obj.type == 'MESH':
                 mesh = obj.data
                 mesh_name = os.path.splitext(os.path.basename(mesh_file_path))[0]
+                print(mesh_name)
                 start_index = 4824
                 end_index = 7560
                 path_indices = find_shortest_path(mesh, start_index, end_index)
