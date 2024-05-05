@@ -20,17 +20,27 @@ def save_to_txt(filename, data):
     with open(filename, 'w') as f:
         f.write(str(data))
 
-start_index = 4824 #smplx
-end_index = 7560 #smplx
+def process_directory(directory):
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            if filename.endswith(".obj"):
+                mesh_file_path = os.path.join(root, filename)
+                vertices = load_obj(mesh_file_path)
+                if len(vertices) < max(start_index, end_index) + 1:
+                    print("Not enough vertices in:", filename)
+                    continue
+                spatial_distance = calculate_spatial_distance(vertices, start_index, end_index)
+                output_file = os.path.join(root, filename.replace(".obj", ".txt"))
+                save_to_txt(output_file, spatial_distance)
+                print("Spatial distance saved to:", output_file)
 
+start_index = 4824  # smplx
+end_index = 7560  # smplx
+obj_directory = r"C:\Users\lalas\Desktop\sIMphar"
 
-obj_directory = r"C:\Users\lalas\Desktop\sIMphar\S1_1_PXL_20240405_121105988\mesh"
+# Check if directory exists
+if not os.path.exists(obj_directory):
+    print("Directory does not exist:", obj_directory)
+    exit()
 
-for filename in os.listdir(obj_directory):
-    if filename.endswith(".obj"):
-        mesh_file_path = os.path.join(obj_directory, filename)
-        vertices = load_obj(mesh_file_path)
-        spatial_distance = calculate_spatial_distance(vertices, start_index, end_index)
-        output_file = obj_directory+"/"+filename.replace(".obj", ".txt")
-        save_to_txt(output_file, spatial_distance)
-        print("Spatial distance saved to:", output_file)
+process_directory(obj_directory)
