@@ -21,17 +21,17 @@ def lowpass_filter(freq,fc,data):
    
     return filtered_data
 
-sIMP = np.load(r"C:\Users\lalas\Desktop\sIMphar\S3_1.npy")
+sIMP = np.load(r"C:\Users\lalas\Desktop\sIMphar\S10_2.npy")
 sIMP = np.array(sIMP).astype(float)
-datapath = r"C:\Users\lalas\Downloads\EIS_P01_1_1713272269356.txt"
+datapath = r"C:\Users\lalas\Downloads\EIS_p09_1_1713968563618.txt"
 IMP = pd.read_csv(datapath, sep=",", usecols=[3, 4, 5], index_col=False)
 
     
 fig, axs = plt.subplots(3, 1, figsize=(20, 6))
-#zero_array = np.zeros(1100)
+#zero_array = np.zeros(5500)
 #sIMP = np.concatenate((zero_array, sIMP))
 # Plot 1: synth 1
-axs[0].plot(sIMP[50:7790])
+axs[0].plot(sIMP[0:])
 axs[0].set_title('synth 1')
 axs[0].grid(True)
 
@@ -50,7 +50,7 @@ axs[2].grid(True)
 plt.tight_layout()
 plt.show()
 
-sIMP_new = sIMP[0:8950]
+sIMP_new = sIMP[0:]
 IMP_mag = np.array(IMP.iloc[:, 0])
 IMP_phase = np.array(IMP.iloc[:, 1])
 IMP_class = np.array(IMP.iloc[:,2])
@@ -91,4 +91,4 @@ pk_dict = {
 }
 
 # Save dictionary containing tensors
-torch.save(pk_dict, r'C:\Users\lalas\Desktop\sIMphar\S2_2.pt')
+torch.save(pk_dict, r'C:\Users\lalas\Desktop\sIMphar\S10_2.pt')
