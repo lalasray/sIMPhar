@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 import numpy as np
 
-pickle_file_path = r"C:\Users\lalas\Desktop\sIMphar\out\S5_1.pt"
+pickle_file_path = r"C:\Users\lalas\Desktop\sIMphar\out\S10_1.pt"
 
 loaded_data = torch.load(pickle_file_path)
 
@@ -19,11 +19,11 @@ axs[1].set_title('real mag')
 axs[1].grid(True)
 
 axs[2].plot(loaded_data["sIMP_phase"])
-axs[2].set_title('real phase')
+axs[2].set_title('synth phase')
 axs[2].grid(True)
 
 axs[3].plot(loaded_data["IMP_phase"])
-axs[3].set_title('real mag')
+axs[3].set_title('real phase')
 axs[3].grid(True)
 
 axs[4].plot(loaded_data["class"])
