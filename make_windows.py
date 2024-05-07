@@ -2,7 +2,7 @@ import os
 import numpy as np
 import torch
 from InstructorEmbedding import INSTRUCTOR
-data = "simp" #simp #imp
+data = "imp" #simp #imp
 
 if data == "simp":
     imp_files = []
@@ -42,3 +42,10 @@ if data == "simp":
             filename = os.path.splitext(os.path.basename(imp_files[idx]))[0]
             torch.save((imp,text), os.path.join(save_path, f"{filename}_window{i}.pt"))
             print(save_path)
+
+elif data == "imp":
+    Print("ToDo")
+    imp_files = []
+    pose_window_size = 50 
+    pose_stride = 10
+    
