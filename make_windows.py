@@ -1,31 +1,44 @@
 import os
 import numpy as np
 import torch
+from InstructorEmbedding import INSTRUCTOR
+data = "simp" #simp #imp
 
-path = r"C:\Users\lalas\Desktop\sIMphar\out"
+if data == "simp":
+    imp_files = []
+    pose_window_size = 50 
+    pose_stride = 10
+    path = r"/media/lala/Seagate/Dataset/Meta/sIMphar_synth/sIMphar_synth" 
 
-imp_files = []
-pose_window_size = 50 
-pose_stride = 10
-for file in os.listdir(path):
-    if file.endswith('.pt'):
-        imp_files.append(os.path.join(path, file))
-print(imp_files)    
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith('.pt'):
+                imp_files.append(os.path.join(root, file))
 
-for idx in range(len(imp_files)):
-    pose_data = np.load(pose_files[idx])
-#    imu_data = np.load(imu_files[idx])
-#    text_data = np.load(text_files[idx])
-    #print(pose_data.shape, imu_data.shape, text_data.shape)
-#    pose_windows = [pose_data[i:i+pose_window_size] for i in range(0, len(pose_data) - pose_window_size + 1, pose_stride)]
-#    imu_windows = [imu_data[i:i+(pose_window_size*2)] for i in range(0, len(imu_data) - (pose_window_size*2) + 1, (pose_stride*2))]
-    #print(len(pose_windows),len(imu_windows))
-#    for window, (pose_window, imu_window) in enumerate(zip(pose_windows, imu_windows)):
-#        pose = torch.tensor(pose_window)
-#        imu = torch.tensor(imu_window)
-#        text = torch.tensor(text_data)
-        # Save tensors
-#        save_path = path+'tensors/'
-#        os.makedirs(save_path, exist_ok=True)
-#        filename = os.path.splitext(os.path.basename(pose_files[idx]))[0]
-#        torch.save((pose, imu, text), os.path.join(save_path, f"{filename}_window{window}.pt"))
+    #print(imp_files)
+
+    for idx in range(len(imp_files)):
+        tensor = torch.load(imp_files[idx])
+        #print(tensor.shape)
+
+        imp_windows = [tensor[i:i+pose_window_size] for i in range(0, len(tensor) - pose_window_size + 1, pose_stride)]
+        i = 0
+        #print(len(imp_windows))
+        for window in imp_windows:
+            i = i+1
+            #print(window)
+            imp = torch.tensor(window)
+            model = INSTRUCTOR('hkunlp/instructor-large')
+            n_root = os.path.dirname(imp_files[idx])
+            with open(n_root+"/results.txt", 'r') as file:
+                # Read the first line
+                first_line = file.readline().strip()  # Strip() removes any leading/trailing whitespace
+            sentence = ['Represent human activity sentence for clustering: ',first_line]
+            embeddings = model.encode(sentence)
+            text = embeddings
+            # Save tensors
+            save_path = n_root+'tensors/'
+            os.makedirs(save_path, exist_ok=True)
+            filename = os.path.splitext(os.path.basename(imp_files[idx]))[0]
+            torch.save((imp,text), os.path.join(save_path, f"{filename}_window{i}.pt"))
+            print(save_path)
