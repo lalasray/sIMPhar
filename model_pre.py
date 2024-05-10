@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import torch
-import torch.optim as optim  # Importing optimization module
+import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 from text_enc import TextEncoder
@@ -35,7 +35,7 @@ def get_data_files(data_path):
             data_files.append(os.path.join(data_path, file))
     return data_files
 
-dataset_train = TriDataset(get_data_files(r"C:\Users\lalas\Desktop\n"))
+dataset_train = TriDataset(get_data_files(r"C:\Users\lalas\Desktop\n\out\synth"))
 
 batch_size = 32
 data_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
@@ -61,7 +61,7 @@ model = BiModalModel(text_encoder, imp_encoder).to(device)
 criterion = InfonceLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-num_epochs = 10  # Define the number of epochs
+num_epochs = 500  # Define the number of epochs
 for epoch in range(num_epochs):
     model.train()
     total_loss = 0  # Initialize total_loss
@@ -74,4 +74,13 @@ for epoch in range(num_epochs):
         total_loss += loss.item()
 
     total_loss /= len(data_loader)
-    print(epoch," : ", total_loss)
+    print(epoch, ":", total_loss)
+    
+    # Save the model checkpoint
+    checkpoint_path = f"model_checkpoint_.pt"
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'loss': total_loss,
+    }, checkpoint_path)
