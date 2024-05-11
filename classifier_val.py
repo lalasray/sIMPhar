@@ -113,20 +113,51 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(fine_tuned_model.parameters(), lr=0.001)
 
 num_epochs = 100
+best_test_loss = float('inf')  # Initialize best test loss to infinity
+patience = 5  # Number of epochs to wait before stopping if the test loss doesn't improve
+counter = 0  # Counter to track the number of epochs with no improvement
+
 for epoch in range(num_epochs):
     fine_tuned_model.train()
-    total_loss = 0
+    total_train_loss = 0
     for imp, text, aclass in data_loader:
         optimizer.zero_grad()
         aclass_pred = fine_tuned_model(text.to(device), imp.to(device))
         loss = criterion(aclass_pred, aclass.to(device))  
         loss.backward()
         optimizer.step()
-        total_loss += loss.item()
+        total_train_loss += loss.item()
         
-    total_loss /= len(data_loader)
-    print("Epoch:", epoch, "Loss:", total_loss)
+    total_train_loss /= len(data_loader)
+    
+    # Evaluation on test set
+    fine_tuned_model.eval()  # Set the model to evaluation mode
+    total_test_loss = 0
+    with torch.no_grad():
+        for imp, text, aclass in test_loader:
+            aclass_pred = fine_tuned_model(text.to(device), imp.to(device))
+            loss = criterion(aclass_pred, aclass.to(device))
+            total_test_loss += loss.item()
+            
+    total_test_loss /= len(test_loader)
+    
+    print(f"Epoch: {epoch}, Train Loss: {total_train_loss}, Test Loss: {total_test_loss}")
+    
+    # Check if the current test loss is lower than the best test loss
+    if total_test_loss < best_test_loss:
+        best_test_loss = total_test_loss
+        counter = 0  # Reset the counter if there's an improvement
+    else:
+        counter += 1  # Increment the counter if there's no improvement
+        
+    # Check if the counter exceeds patience
+    if counter >= patience:
+        print("Early stopping triggered. No improvement in test loss.")
+        break
 
+# Save the final model
 torch.save({
     'model_state_dict': fine_tuned_model.state_dict(),
-    'optimizer_state_dict': optimizer.state_dict(),}, "fine_tuned_model_checkpoint.pt")
+    'optimizer_state_dict': optimizer.state_dict(),
+    'best_test_loss': best_test_loss
+}, "fine_tuned_model_checkpoint.pt")
