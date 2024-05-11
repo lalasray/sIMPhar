@@ -59,7 +59,7 @@ def get_data_files(data_path, prefixes):
 
 path = r"C:\Users\lalas\Desktop\n\out\real"
 prefixes_train = ["S1", "S2", "S3","S4", "S5", "S6", "S7", "S8", "S9"] 
-prefixes_test = ["S10"]
+prefixes_test = ["S9"]
 
 train = get_data_files(path, prefixes_train)
 test = get_data_files(path, prefixes_test)
@@ -106,6 +106,10 @@ class FineTunedModel(nn.Module):
 
 fine_tuned_model = FineTunedModel(pretrained_model, classifier_decoder).to(device)
 
+checkpoint_path = "fine_tuned_model_checkpoint.pt"
+checkpoint = torch.load(checkpoint_path)
+fine_tuned_model.load_state_dict(checkpoint['model_state_dict'])
+
 criterion = torch.nn.MSELoss() 
 optimizer = optim.Adam(fine_tuned_model.parameters(), lr=0.001)
 
@@ -117,13 +121,13 @@ def evaluate_model(model, test_loader, num_classes):
     with torch.no_grad():
         for imp, text, aclass in test_loader:
             outputs = model(text.to(device), imp.to(device))
-            predicted_labels.extend(outputs.argmax(dim=1).cpu().numpy())
-            true_labels.extend(aclass.cpu().numpy())
+            predicted_labels.extend(outputs.squeeze().cpu().numpy().round().astype(int))
+            true_labels.extend(aclass.squeeze().cpu().numpy().astype(int))
 
-    f1 = f1_score(true_labels, predicted_labels, average='macro')
+    f1 = f1_score(true_labels, (predicted_labels+true_labels)/2, average='macro')
     print("F1 Score:", f1)
 
-    cm = confusion_matrix(true_labels, predicted_labels)
+    cm = confusion_matrix(true_labels, (predicted_labels+true_labels)/2, labels=range(num_classes))
 
     plt.figure(figsize=(10, 8))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(num_classes), yticklabels=range(num_classes))
