@@ -130,8 +130,7 @@ for epoch in range(num_epochs):
         
     total_train_loss /= len(data_loader)
     
-    # Evaluation on test set
-    fine_tuned_model.eval()  # Set the model to evaluation mode
+    fine_tuned_model.eval() 
     total_test_loss = 0
     with torch.no_grad():
         for imp, text, aclass in test_loader:
@@ -143,19 +142,16 @@ for epoch in range(num_epochs):
     
     print(f"Epoch: {epoch}, Train Loss: {total_train_loss}, Test Loss: {total_test_loss}")
     
-    # Check if the current test loss is lower than the best test loss
     if total_test_loss < best_test_loss:
         best_test_loss = total_test_loss
-        counter = 0  # Reset the counter if there's an improvement
+        counter = 0 
     else:
-        counter += 1  # Increment the counter if there's no improvement
+        counter += 1 
         
-    # Check if the counter exceeds patience
     if counter >= patience:
         print("Early stopping triggered. No improvement in test loss.")
         break
 
-# Save the final model
 torch.save({
     'model_state_dict': fine_tuned_model.state_dict(),
     'optimizer_state_dict': optimizer.state_dict(),

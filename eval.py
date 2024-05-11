@@ -1,20 +1,3 @@
-import os
-import numpy as np
-import torch
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-from torch.nn.utils.rnn import pad_sequence
-from text_enc import TextEncoder
-from imp_enc import ImpEncoder
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-from config import embedding_dim
-from loss import InfonceLoss
-import torch.nn as nn
-import torch.nn.functional as F
-from sklearn.metrics import f1_score, confusion_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 class BiModalModel(nn.Module):
     def __init__(self, text_encoder, imp_encoder):
         super(BiModalModel, self).__init__()
@@ -28,6 +11,7 @@ class BiModalModel(nn.Module):
         imp_output = F.normalize(imp_output, p=2, dim=1)
 
         return text_output, imp_output
+
 
 class TriDataset(Dataset):
     def __init__(self, data_files):
@@ -46,7 +30,7 @@ class TriDataset(Dataset):
         aclass = data['aclass'].long()  
         aclass_onehot = torch.zeros(10) 
         aclass_onehot[aclass] = 1
-        print(aclass_onehot.shape)
+        #print(aclass_onehot.shape)
         return imp, text, aclass_onehot
 
 def get_data_files(data_path, prefixes):
@@ -59,7 +43,7 @@ def get_data_files(data_path, prefixes):
 
 path = r"C:\Users\lalas\Desktop\n\out\real"
 prefixes_train = ["S1", "S2", "S3","S4", "S5", "S6", "S7", "S8", "S9"] 
-prefixes_test = ["S9"]
+prefixes_test = ["S10"]
 
 train = get_data_files(path, prefixes_train)
 test = get_data_files(path, prefixes_test)
@@ -72,15 +56,18 @@ data_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 
 class ClassifierDecoder(nn.Module):
-    def __init__(self, input_dim, num_classes):
+    def __init__(self, input_size, hidden_size, num_classes):
         super(ClassifierDecoder, self).__init__()
-        self.fc1 = nn.Linear(input_dim, 512)
-        self.fc2 = nn.Linear(512, 1)
-        
-    def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        return x
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, num_classes)
+    
+    def forward(self, imp):
+        imp_flat = imp.view(imp.size(0), -1) 
+        #text_flat = text.view(text.size(0), -1)  
+        #combined = torch.cat((imp_flat, text_flat), dim=1) 
+        out = F.relu(self.fc1(imp_flat)) 
+        out = self.fc2(out)
+        return out
 
 text_encoder = TextEncoder(embedding_dim=embedding_dim).to(device)
 imp_encoder = ImpEncoder(embedding_dim=embedding_dim).to(device)
@@ -91,7 +78,7 @@ checkpoint = torch.load(model_checkpoint_path)
 pretrained_model.load_state_dict(checkpoint['model_state_dict'])
 
 num_classes = 10
-classifier_decoder = ClassifierDecoder(embedding_dim, num_classes).to(device)
+classifier_decoder = ClassifierDecoder(embedding_dim, hidden_size= 512, num_classes=10).to(device)
 
 class FineTunedModel(nn.Module):
     def __init__(self, pretrained_model, classifier_decoder):
