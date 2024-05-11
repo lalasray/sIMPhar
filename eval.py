@@ -29,25 +29,25 @@ class BiModalModel(nn.Module):
 
         return text_output, imp_output
 
-
 class TriDataset(Dataset):
     def __init__(self, data_files):
         self.data_files = data_files
-
+ 
     def __len__(self):
         return len(self.data_files)
-
+ 
     def __getitem__(self, idx):
         data = torch.load(self.data_files[idx])
         mag = data['simp_mag']
         phase = data['simp_phase']
         imp = torch.stack((mag, phase), dim=0)
         text = data['embedding'].reshape(-1)
-        text= torch.tensor(text)
-        aclass = data['aclass'].float() 
-        aclass = aclass.view(1)
-        
-        return imp,text,aclass
+        text = torch.tensor(text)
+        aclass = data['aclass'].long()  
+        aclass_onehot = torch.zeros(10) 
+        aclass_onehot[aclass] = 1
+        print(aclass_onehot.shape)
+        return imp, text, aclass_onehot
 
 def get_data_files(data_path, prefixes):
     data_files = []

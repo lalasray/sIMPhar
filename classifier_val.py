@@ -31,30 +31,28 @@ class BiModalModel(nn.Module):
 class TriDataset(Dataset):
     def __init__(self, data_files):
         self.data_files = data_files
-
+ 
     def __len__(self):
         return len(self.data_files)
-
+ 
     def __getitem__(self, idx):
         data = torch.load(self.data_files[idx])
         mag = data['simp_mag']
         phase = data['simp_phase']
         imp = torch.stack((mag, phase), dim=0)
         text = data['embedding'].reshape(-1)
-        text= torch.tensor(text)
-        aclass = data['aclass'].float() 
-        aclass = aclass.view(1)
-        
-        return imp,text,aclass
+        text = torch.tensor(text)
+        aclass = data['aclass'].long()  
+        aclass_onehot = torch.zeros(10) 
+        aclass_onehot[aclass] = 1
+        #print(aclass_onehot.shape)
+        return imp, text, aclass_onehot
 
 def get_data_files(data_path, prefixes):
     data_files = []
     for file in os.listdir(data_path):
-        # Check if the file ends with '.pth' extension
         if file.endswith('.pth'):
-            # Check if the file name starts with any of the specified prefixes
             if any(file.startswith(prefix) for prefix in prefixes):
-                # If it does, append the file path to the data_files list
                 data_files.append(os.path.join(data_path, file))
     return data_files
 
@@ -73,19 +71,19 @@ batch_size = 32
 data_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 
-
 class ClassifierDecoder(nn.Module):
-    def __init__(self, input_dim, num_classes):
+    def __init__(self, input_size, hidden_size, num_classes):
         super(ClassifierDecoder, self).__init__()
-        self.fc1 = nn.Linear(input_dim, 512)
-        self.fc2 = nn.Linear(512, 1)
-        
-    def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        #predicted_classes = torch.argmax(x, dim=1)
-        #predicted_classes = predicted_classes.to(torch.int8)
-        return x
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, num_classes)
+    
+    def forward(self, imp):
+        imp_flat = imp.view(imp.size(0), -1) 
+        #text_flat = text.view(text.size(0), -1)  
+        #combined = torch.cat((imp_flat, text_flat), dim=1) 
+        out = F.relu(self.fc1(imp_flat)) 
+        out = self.fc2(out)
+        return out
 
 text_encoder = TextEncoder(embedding_dim=embedding_dim).to(device)
 imp_encoder = ImpEncoder(embedding_dim=embedding_dim).to(device)
@@ -96,7 +94,7 @@ checkpoint = torch.load(model_checkpoint_path)
 pretrained_model.load_state_dict(checkpoint['model_state_dict'])
 
 num_classes = 10
-classifier_decoder = ClassifierDecoder(embedding_dim, num_classes).to(device)
+classifier_decoder = ClassifierDecoder(embedding_dim, hidden_size= 512, num_classes=10).to(device)
 
 class FineTunedModel(nn.Module):
     def __init__(self, pretrained_model, classifier_decoder):
@@ -111,7 +109,7 @@ class FineTunedModel(nn.Module):
 
 fine_tuned_model = FineTunedModel(pretrained_model, classifier_decoder).to(device)
 
-criterion = torch.nn.MSELoss() 
+criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(fine_tuned_model.parameters(), lr=0.001)
 
 num_epochs = 100
