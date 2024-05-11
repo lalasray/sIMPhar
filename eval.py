@@ -1,3 +1,21 @@
+import os
+import numpy as np
+import torch
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from torch.nn.utils.rnn import pad_sequence
+from sklearn.metrics import f1_score, confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+from text_enc import TextEncoder
+from imp_enc import ImpEncoder
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+from config import embedding_dim
+from loss import InfonceLoss
+import torch.nn as nn
+import torch.nn.functional as F
+
+
 class BiModalModel(nn.Module):
     def __init__(self, text_encoder, imp_encoder):
         super(BiModalModel, self).__init__()
@@ -100,27 +118,31 @@ fine_tuned_model.load_state_dict(checkpoint['model_state_dict'])
 criterion = torch.nn.MSELoss() 
 optimizer = optim.Adam(fine_tuned_model.parameters(), lr=0.001)
 
-def evaluate_model(model, test_loader, num_classes):
+def evaluate_model(model, test_loader):
     model.eval()
     true_labels = []
     predicted_labels = []
+    num_classes = 10  # Redefine num_classes here
 
     with torch.no_grad():
-        for imp, text, aclass in test_loader:
+        for imp, text, aclass_onehot in test_loader:
             outputs = model(text.to(device), imp.to(device))
-            predicted_labels.extend(outputs.squeeze().cpu().numpy().round().astype(int))
-            true_labels.extend(aclass.squeeze().cpu().numpy().astype(int))
+            predicted_labels.extend(torch.argmax(outputs, dim=1).cpu().numpy())
+            true_labels.extend(torch.argmax(aclass_onehot, dim=1).cpu().numpy())
 
-    f1 = f1_score(true_labels, (predicted_labels+true_labels)/2, average='macro')
+    f1 = f1_score(true_labels, predicted_labels, average='macro')
     print("F1 Score:", f1)
 
-    cm = confusion_matrix(true_labels, (predicted_labels+true_labels)/2, labels=range(num_classes))
+    cm = confusion_matrix(true_labels, predicted_labels, labels=range(num_classes))
+
+    cm_percentage = cm.astype('float') / cm.sum()  # Normalize by the total number of samples
 
     plt.figure(figsize=(10, 8))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(num_classes), yticklabels=range(num_classes))
+    sns.heatmap(cm_percentage, annot=True, fmt='.2%', cmap='Blues', xticklabels=range(num_classes), yticklabels=range(num_classes))
     plt.xlabel('Predicted')
     plt.ylabel('True')
-    plt.title('Confusion Matrix')
+    plt.title('Confusion Matrix (Percentage)')
     plt.show()
 
-evaluate_model(fine_tuned_model, test_loader, num_classes)
+
+evaluate_model(fine_tuned_model, test_loader)

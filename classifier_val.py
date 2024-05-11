@@ -60,7 +60,6 @@ path = r"C:\Users\lalas\Desktop\n\out\real"
 prefixes_train = ["S1", "S2", "S3","S4", "S5", "S6", "S7", "S8", "S9"] 
 prefixes_test = ["S10"]
 
-# Call the function
 train = get_data_files(path, prefixes_train)
 test = get_data_files(path, prefixes_test)
 
@@ -113,9 +112,9 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(fine_tuned_model.parameters(), lr=0.001)
 
 num_epochs = 100
-best_test_loss = float('inf')  # Initialize best test loss to infinity
-patience = 5  # Number of epochs to wait before stopping if the test loss doesn't improve
-counter = 0  # Counter to track the number of epochs with no improvement
+best_test_loss = float('inf')
+patience = 5 
+counter = 0 
 
 for epoch in range(num_epochs):
     fine_tuned_model.train()
