@@ -11,7 +11,7 @@ from config import embedding_dim
 from loss import InfonceLoss
 import torch.nn as nn
 import torch.nn.functional as F
-
+from Multihead import MultiheadClassifier
 
 class BiModalModel(nn.Module):
     def __init__(self, text_encoder, imp_encoder):
@@ -93,8 +93,8 @@ checkpoint = torch.load(model_checkpoint_path)
 pretrained_model.load_state_dict(checkpoint['model_state_dict'])
 
 num_classes = 10
-classifier_decoder = ClassifierDecoder(embedding_dim, hidden_size= 512, num_classes=10).to(device)
-
+#classifier_decoder = ClassifierDecoder(embedding_dim, hidden_size= 512, num_classes=num_classes).to(device)
+classifier_decoder = MultiheadClassifier(input_size=embedding_dim, num_classes=num_classes).to(device)
 class FineTunedModel(nn.Module):
     def __init__(self, pretrained_model, classifier_decoder):
         super(FineTunedModel, self).__init__()

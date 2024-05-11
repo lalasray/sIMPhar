@@ -122,7 +122,7 @@ def evaluate_model(model, test_loader):
     model.eval()
     true_labels = []
     predicted_labels = []
-    num_classes = 10  # Redefine num_classes here
+    num_classes = 10 
 
     with torch.no_grad():
         for imp, text, aclass_onehot in test_loader:
@@ -135,7 +135,7 @@ def evaluate_model(model, test_loader):
 
     cm = confusion_matrix(true_labels, predicted_labels, labels=range(num_classes))
 
-    cm_percentage = cm.astype('float') / cm.sum()  # Normalize by the total number of samples
+    cm_percentage = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis] 
 
     plt.figure(figsize=(10, 8))
     sns.heatmap(cm_percentage, annot=True, fmt='.2%', cmap='Blues', xticklabels=range(num_classes), yticklabels=range(num_classes))
@@ -143,6 +143,5 @@ def evaluate_model(model, test_loader):
     plt.ylabel('True')
     plt.title('Confusion Matrix (Percentage)')
     plt.show()
-
 
 evaluate_model(fine_tuned_model, test_loader)
