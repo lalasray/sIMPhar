@@ -11,7 +11,9 @@ from config import embedding_dim
 from loss import InfonceLoss
 import torch.nn as nn
 import torch.nn.functional as F
-
+from sklearn.metrics import f1_score, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 class BiModalModel(nn.Module):
     def __init__(self, text_encoder, imp_encoder):
@@ -47,18 +49,27 @@ class TriDataset(Dataset):
         
         return imp,text,aclass
 
-def get_data_files(data_path):
+def get_data_files(data_path, prefixes):
     data_files = []
     for file in os.listdir(data_path):
         if file.endswith('.pth'):
-            data_files.append(os.path.join(data_path, file))
+            if any(file.startswith(prefix) for prefix in prefixes):
+                data_files.append(os.path.join(data_path, file))
     return data_files
 
-dataset_train = TriDataset(get_data_files(r"C:\Users\lalas\Desktop\n\out\real"))
+path = r"C:\Users\lalas\Desktop\n\out\real"
+prefixes_train = ["S1", "S2", "S3","S4", "S5", "S6", "S7", "S8", "S9"] 
+prefixes_test = ["S10"]
+
+train = get_data_files(path, prefixes_train)
+test = get_data_files(path, prefixes_test)
+
+dataset_train = TriDataset(train)
+dataset_test = TriDataset(test)
 
 batch_size = 32
 data_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
-
+test_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 
 class ClassifierDecoder(nn.Module):
     def __init__(self, input_dim, num_classes):
@@ -69,8 +80,6 @@ class ClassifierDecoder(nn.Module):
     def forward(self, x):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
-        #predicted_classes = torch.argmax(x, dim=1)
-        #predicted_classes = predicted_classes.to(torch.int8)
         return x
 
 text_encoder = TextEncoder(embedding_dim=embedding_dim).to(device)
@@ -100,21 +109,27 @@ fine_tuned_model = FineTunedModel(pretrained_model, classifier_decoder).to(devic
 criterion = torch.nn.MSELoss() 
 optimizer = optim.Adam(fine_tuned_model.parameters(), lr=0.001)
 
-num_epochs = 100
-for epoch in range(num_epochs):
-    fine_tuned_model.train()
-    total_loss = 0
-    for imp, text, aclass in data_loader:
-        optimizer.zero_grad()
-        aclass_pred = fine_tuned_model(text.to(device), imp.to(device))
-        loss = criterion(aclass_pred, aclass.to(device))  
-        loss.backward()
-        optimizer.step()
-        total_loss += loss.item()
-        
-    total_loss /= len(data_loader)
-    print("Epoch:", epoch, "Loss:", total_loss)
+def evaluate_model(model, test_loader, num_classes):
+    model.eval()
+    true_labels = []
+    predicted_labels = []
 
-torch.save({
-    'model_state_dict': fine_tuned_model.state_dict(),
-    'optimizer_state_dict': optimizer.state_dict(),}, "fine_tuned_model_checkpoint.pt")
+    with torch.no_grad():
+        for imp, text, aclass in test_loader:
+            outputs = model(text.to(device), imp.to(device))
+            predicted_labels.extend(outputs.argmax(dim=1).cpu().numpy())
+            true_labels.extend(aclass.cpu().numpy())
+
+    f1 = f1_score(true_labels, predicted_labels, average='macro')
+    print("F1 Score:", f1)
+
+    cm = confusion_matrix(true_labels, predicted_labels)
+
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=range(num_classes), yticklabels=range(num_classes))
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.title('Confusion Matrix')
+    plt.show()
+
+evaluate_model(fine_tuned_model, test_loader, num_classes)

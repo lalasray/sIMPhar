@@ -47,17 +47,31 @@ class TriDataset(Dataset):
         
         return imp,text,aclass
 
-def get_data_files(data_path):
+def get_data_files(data_path, prefixes):
     data_files = []
     for file in os.listdir(data_path):
+        # Check if the file ends with '.pth' extension
         if file.endswith('.pth'):
-            data_files.append(os.path.join(data_path, file))
+            # Check if the file name starts with any of the specified prefixes
+            if any(file.startswith(prefix) for prefix in prefixes):
+                # If it does, append the file path to the data_files list
+                data_files.append(os.path.join(data_path, file))
     return data_files
 
-dataset_train = TriDataset(get_data_files(r"C:\Users\lalas\Desktop\n\out\real"))
+path = r"C:\Users\lalas\Desktop\n\out\real"
+prefixes_train = ["S1", "S2", "S3","S4", "S5", "S6", "S7", "S8", "S9"] 
+prefixes_test = ["S10"]
+
+# Call the function
+train = get_data_files(path, prefixes_train)
+test = get_data_files(path, prefixes_test)
+
+dataset_train = TriDataset(train)
+dataset_test = TriDataset(test)
 
 batch_size = 32
 data_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 
 
 class ClassifierDecoder(nn.Module):
