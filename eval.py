@@ -61,18 +61,14 @@ def get_data_files(data_path, prefixes):
     return data_files
 
 path = r"C:\Users\lalas\Desktop\n\out\real"
-prefixes_train = ["S1", "S2", "S3","S4", "S5", "S6", "S7", "S8", "S9"] 
-prefixes_test = ["S10"]
+prefixes_test = ["S6"]
 
-train = get_data_files(path, prefixes_train)
 test = get_data_files(path, prefixes_test)
 
-dataset_train = TriDataset(train)
 dataset_test = TriDataset(test)
 
 batch_size = 32
-data_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
+test_loader = DataLoader(dataset_test, batch_size=batch_size, shuffle=True)
 
 
 text_encoder = TextEncoder(embedding_dim=embedding_dim).to(device)
