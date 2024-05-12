@@ -61,7 +61,7 @@ def get_data_files(data_path, prefixes):
     return data_files
 
 path = r"C:\Users\lalas\Desktop\n\out\real"
-prefixes_test = ["S6"]
+prefixes_test = ["S10+"]
 
 test = get_data_files(path, prefixes_test)
 
