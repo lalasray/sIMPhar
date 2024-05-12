@@ -14,6 +14,7 @@ from config import embedding_dim
 from loss import InfonceLoss
 import torch.nn as nn
 import torch.nn.functional as F
+from Multihead import ClassifierDecoder
 
 
 class BiModalModel(nn.Module):
@@ -73,19 +74,6 @@ batch_size = 32
 data_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 
-class ClassifierDecoder(nn.Module):
-    def __init__(self, input_size, hidden_size, num_classes):
-        super(ClassifierDecoder, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, num_classes)
-    
-    def forward(self, imp):
-        imp_flat = imp.view(imp.size(0), -1) 
-        #text_flat = text.view(text.size(0), -1)  
-        #combined = torch.cat((imp_flat, text_flat), dim=1) 
-        out = F.relu(self.fc1(imp_flat)) 
-        out = self.fc2(out)
-        return out
 
 text_encoder = TextEncoder(embedding_dim=embedding_dim).to(device)
 imp_encoder = ImpEncoder(embedding_dim=embedding_dim).to(device)
@@ -96,7 +84,7 @@ checkpoint = torch.load(model_checkpoint_path)
 pretrained_model.load_state_dict(checkpoint['model_state_dict'])
 
 num_classes = 10
-classifier_decoder = ClassifierDecoder(embedding_dim, hidden_size= 512, num_classes=10).to(device)
+classifier_decoder = ClassifierDecoder(input_size=embedding_dim, num_classes=num_classes).to(device)
 
 class FineTunedModel(nn.Module):
     def __init__(self, pretrained_model, classifier_decoder):
