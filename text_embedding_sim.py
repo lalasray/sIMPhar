@@ -44,25 +44,48 @@ sentences =[['Represent human activity sentence for clustering: ','the person is
             ['Represent human activity sentence for clustering: ','the person boxing with both hands.'],]
 
 embeddings = model.encode(sentences)
+
+sentences1 = [['Represent human activity sentence for clustering: ','Doing random activities.'],
+             ['Represent human activity sentence for clustering: ','Boxing with both hands.'],
+             ['Represent human activity sentence for clustering: ','Doing Biceps Curls.'],
+             ['Represent human activity sentence for clustering: ',"Doing Chest Press."],
+             ['Represent human activity sentence for clustering: ','Doing Shoulder and Chest Press.'],
+             ['Represent human activity sentence for clustering: ','Doing Arm hold and Shoulder Press'],
+             ['Represent human activity sentence for clustering: ','Arm Opener.'],
+             ['Represent human activity sentence for clustering: ','Answering telephone.'],
+             ['Represent human activity sentence for clustering: ','Wearing VR headsets.'],
+             ['Represent human activity sentence for clustering: ','Sweeping table.'],
+             ]
+
+embeddings1 = model.encode(sentences1)
 #clustering_model = sklearn.cluster.MiniBatchKMeans(n_clusters=2)
 #clustering_model.fit(embeddings)
 #cluster_assignment = clustering_model.labels_
 #print(cluster_assignment)
-print(embeddings.shape)
+#print(embeddings.shape)
 
-torch.save(embeddings, "simulated_embedding.pt")
+#torch.save(embeddings, "simulated_embedding.pt")
 arr1 = np.arange(35)
 tsne = TSNE(n_components=2, perplexity=5, metric="cosine", init="random")  # Adjust perplexity here
 embeddings_tsne = tsne.fit_transform(embeddings)
+
+arr2 = np.arange(10)
+tsne2 = TSNE(n_components=2, perplexity=5, metric="cosine", init="random")  # Adjust perplexity here
+embeddings_tsne2 = tsne.fit_transform(embeddings1)
+
 plt.figure(figsize=(8, 6))
-plt.scatter(embeddings_tsne[:, 0], embeddings_tsne[:, 1], c=arr1, cmap='viridis')
+plt.scatter(embeddings_tsne[:, 0], embeddings_tsne[:, 1])#, c=arr1, cmap='viridis')
+plt.scatter(embeddings_tsne2[:, 0], embeddings_tsne2[:, 1])#, c=arr1, cmap='viridis')
 
 # Annotate each point with its corresponding label
 for i, label in enumerate(arr1):
     plt.text(embeddings_tsne[i, 0], embeddings_tsne[i, 1], str(label), color='black', fontsize=8)
 
+for i, label in enumerate(arr2):
+    plt.text(embeddings_tsne2[i, 0], embeddings_tsne2[i, 1], str(label), color='black', fontsize=8)
+
 plt.title('t-SNE Visualization of Clusters')
 plt.xlabel('t-SNE Dimension 1')
 plt.ylabel('t-SNE Dimension 2')
-plt.colorbar(label='Cluster')
+#plt.colorbar(label='Cluster')
 plt.show()
