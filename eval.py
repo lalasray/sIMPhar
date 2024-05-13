@@ -61,7 +61,7 @@ def get_data_files(data_path, prefixes):
     return data_files
 
 path = r"C:\Users\lalas\Desktop\n\out\real"
-prefixes_test = ["S10+"]
+prefixes_test = ["S2"]
 
 test = get_data_files(path, prefixes_test)
 
@@ -120,12 +120,13 @@ def evaluate_model(model, test_loader):
     cm = confusion_matrix(true_labels, predicted_labels, labels=range(num_classes))
 
     cm_percentage = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis] 
+    print(cm_percentage)
 
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(cm_percentage, annot=True, fmt='.2%', cmap='Blues', xticklabels=range(num_classes), yticklabels=range(num_classes))
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.title('Confusion Matrix (Percentage)')
-    plt.show()
+    #plt.figure(figsize=(10, 8))
+    #sns.heatmap(cm_percentage, annot=True, fmt='.2%', cmap='Blues', xticklabels=range(num_classes), yticklabels=range(num_classes))
+    #plt.xlabel('Predicted')
+    #plt.ylabel('True')
+    #plt.title('Confusion Matrix (Percentage)')
+    #plt.show()
 
 evaluate_model(fine_tuned_model, test_loader)
