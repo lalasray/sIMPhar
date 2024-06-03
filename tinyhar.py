@@ -440,62 +440,22 @@ class TinyHAR_Model(nn.Module):
                     nn.ReLU(inplace=True),#))#,
                     nn.BatchNorm2d(out_channel)))
         self.layers_conv = nn.ModuleList(layers_conv)
-        # 这是给最后时间维度 vectorize的时候用的
         downsampling_length = self.get_the_shape(input_shape)        
         
 
-        """
-        PART2 , ================ Cross Channel interaction  =================================
-        这里可供选择的  attn   transformer  itentity
-        输出格式为  Batch, filter_num, downsampling_length, Sensor_channel
-        
-        """
-
+    
         self.channel_interaction = crosschannel_interaction[cross_channel_interaction_type](input_shape[3], filter_num)
-        # 这里还是 B F C L  需要permute++++++++++++++
-
-        
-
-        """
-        PART3 , =============== Cross Channel Fusion  ====================================
-        这里可供选择的  filter   naive  FC
-
-        输出格式为  Batch, downsampling_length, filter_num
-        """
         if cross_channel_aggregation_type == "FC":
-            # 这里需要reshape为 B L C*F++++++++++++++
             self.channel_fusion = crosschannel_aggregation[cross_channel_aggregation_type](input_shape[3]*filter_num,2*filter_num)
         elif cross_channel_aggregation_type in ["SFCC", "SFCF"]:
             self.channel_fusion = crosschannel_aggregation[cross_channel_aggregation_type](input_shape[3],           2*filter_num)
         else:
-            # 这里需要沿着时间轴走
             self.channel_fusion = crosschannel_aggregation[cross_channel_aggregation_type](input_shape[3],           2*filter_num)
-            # --> B F L
-            # 需要reshape++++++++++++++++++++++++++++++
-
             
-        # BLF
         self.activation = nn.ReLU() 
 
 
-        """
-        PART4  , ============= Temporal information Extraction =========================
-        这里可供选择的  gru lstm attn transformer   identity
-
-        输出格式为  Batch, downsampling_length, filter_num
-        """
-        
-        # ++++++++++++ 这里需要讨论
         self.temporal_interaction = temporal_interaction[temporal_info_interaction_type](input_shape[3],           2*filter_num)
-        
-        
-        """
-        PART 5 , =================== Temporal information Aggregation ================
-
-
-        输出格式为  Batch, downsampling_length, filter_num
-        """        
-
         self.dropout = nn.Dropout(dropout)
         
         if temporal_info_aggregation_type == "FC":
@@ -504,9 +464,6 @@ class TinyHAR_Model(nn.Module):
         else:
             self.temporal_fusion = temmporal_aggregation[temporal_info_aggregation_type](input_shape[3],           2*filter_num)
             
-        #--> B F
-
-        # PART 6 , ==================== Prediction ==============================
         self.prediction = nn.Linear(2*filter_num ,number_class)
 
     def get_the_shape(self, input_shape):
@@ -577,9 +534,33 @@ class TinyHAR_Model(nn.Module):
 
 
 
+import torch
 
+input_shape = (32, 1, 60, 6)  # Example: batch_size=32, F=1, L=128, C=9
+number_class = 11
+filter_num = 64
+nb_conv_layers = 4
+filter_size = 5
+cross_channel_interaction_type = "attn"
+cross_channel_aggregation_type = "filter"
+temporal_info_interaction_type = "gru"
+temporal_info_aggregation_type = "FC"
+dropout = 0.1
 
+model = TinyHAR_Model(
+    input_shape=input_shape,
+    number_class=number_class,
+    filter_num=filter_num,
+    nb_conv_layers=nb_conv_layers,
+    filter_size=filter_size,
+    cross_channel_interaction_type=cross_channel_interaction_type,
+    cross_channel_aggregation_type=cross_channel_aggregation_type,
+    temporal_info_interaction_type=temporal_info_interaction_type,
+    temporal_info_aggregation_type=temporal_info_aggregation_type,
+    dropout=dropout
+)
 
-
-
+random_input = torch.rand(input_shape)
+output = model(random_input)
+print(f"Output shape: {output.shape}")
 
